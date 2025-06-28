@@ -1,0 +1,27 @@
+
+src/Example
+src/SokioTest
+
+# build files
+build/
+debug/
+obj/
+bin/
+
+# IDE files
+.vs/
+.vscode/
+.idea/
+
+*.user
+*.suo
+
+# NuGet
+*.nupkg
+
+# System files
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log
