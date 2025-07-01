@@ -1,0 +1,24 @@
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio Version 17
+VisualStudioVersion = 17.5.2.0
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Sokio", "Sokio.csproj", "{CA0DDFB7-424B-71BE-5A57-1358D87ADDB3}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{CA0DDFB7-424B-71BE-5A57-1358D87ADDB3}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{CA0DDFB7-424B-71BE-5A57-1358D87ADDB3}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{CA0DDFB7-424B-71BE-5A57-1358D87ADDB3}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{CA0DDFB7-424B-71BE-5A57-1358D87ADDB3}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {98FD44B1-D3EE-4E31-977D-97C0E659D289}
+	EndGlobalSection
+EndGlobal
