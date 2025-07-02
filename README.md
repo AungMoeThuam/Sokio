@@ -1,51 +1,397 @@
-# Sokio
-web socket implementation in c#
-A C# WebSocket implementation built on top of TcpListener, created for a university assignment.
+# Sokio WebSocket Library
 
-## Overview
+A lightweight, feature-rich C# WebSocket library for building real-time applications with support for text messaging, binary file transfers, and persistent storage.
 
-This project implements the WebSocket protocol (RFC 6455) from scratch using .NET's TcpListener for low-level TCP socket handling. It provides both server and client functionality for WebSocket communication.
+## ✨ Features
 
-## Features
+- 🚀 **High Performance**: Asynchronous WebSocket server and client implementations
+- 💬 **Structured Messaging**: Built-in support for text and binary message types with metadata
+- 📁 **File Persistence**: Automatic binary file storage and retrieval
+- 🎯 **Targeted Messaging**: Send messages to specific clients or broadcast to all
+- 🔄 **Event-Driven**: Comprehensive event handling for connections, messages, and errors
+- 🛡️ **Thread-Safe**: Concurrent connection handling with proper resource management
+- 📦 **Zero Dependencies**: Pure C# implementation using only .NET standard libraries
 
-- Custom WebSocket protocol implementation
-- Built on TcpListener for educational purposes
-- WebSocket handshake handling (HTTP upgrade)
-- Frame parsing and construction
-- Text and binary message support
-- Connection management
+## 🚀 Quick Start
 
-## Usage
+### Installation
 
-Code examples and documentation will be added as development progresses.
+Add the Sokio namespace to your project and include the source files.
 
-## Architecture
+### Creating a WebSocket Server
 
-This implementation follows the WebSocket protocol specification (RFC 6455) and includes:
+```csharp
+using Sokio;
 
-- HTTP to WebSocket upgrade handshake
-- WebSocket frame parsing and generation
-- Opcode handling (text, binary, close, ping, pong)
-- Masking/unmasking for client-server communication
+// Create server on port 8080
+var server = new WebSocketServer(8080);
 
-## Development Status
+// Optional: Enable file persistence
+server.SetPersistenceBinaryFile(new BinaryFileStore("./uploads"));
 
-This project is actively being developed as part of a university assignment. Features and API may change as development progresses.
+// Handle new connections
+server.OnConnection += async (e) =>
+{
+    var client = e.WebSocket;
+    Console.WriteLine($"Client connected: {client.Id}");
+    
+    // Send welcome message
+    await client.SendAsync(new TextMessage("Welcome to the server!"));
+    
+    // Handle messages from this client
+    client.OnMessage += async (msg) =>
+    {
+        if (msg.IsText)
+        {
+            Console.WriteLine($"Received: {msg.Text}");
+            // Echo back to sender
+            await client.SendAsync(new TextMessage($"Echo: {msg.Text}"));
+        }
+    };
+    
+    client.OnClose += (e) => Console.WriteLine($"Client {client.Id} disconnected");
+};
 
-## Dependencies
+// Start listening
+server.Listen();
+Console.WriteLine($"WebSocket server running on port {server.Port}");
+```
 
-- System.Net.Sockets (TcpListener)
-- System.Text (for UTF-8 encoding)
-- System.Security.Cryptography (for handshake hashing)
+### Creating a WebSocket Client
 
-## License
+```csharp
+using Sokio;
 
-This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
+// Connect to server
+var client = new WebSocket("ws://localhost:8080");
 
-## Acknowledgments
+client.OnOpen += (e) => Console.WriteLine("Connected to server");
 
-- Created as part of a university assignment
-- Built from scratch using TcpListener to understand WebSocket protocol internals
-- Implements WebSocket specification RFC 6455
+client.OnMessage += (msg) =>
+{
+    if (msg.IsText)
+        Console.WriteLine($"Server says: {msg.Text}");
+};
 
-**Note**: This is an educational implementation of the WebSocket protocol built for learning purposes as part of a university assignment.
+client.OnClose += (e) => Console.WriteLine("Disconnected from server");
+
+// Connect and send message
+await client.ConnectAsync();
+await client.SendAsync("Hello Server!");
+```
+
+## 📖 Core Concepts
+
+### Message Types
+
+**Text Messages** - Structured text communication with metadata:
+```csharp
+// Simple text message
+var message = new TextMessage("Hello World!");
+
+// Private message to specific client
+var privateMsg = new TextMessage("Secret message", receiverId: "client-123");
+
+await socket.SendAsync(message);
+```
+
+**Binary Messages** - File transfers with automatic persistence:
+```csharp
+// Send a file
+byte[] fileData = File.ReadAllBytes("document.pdf");
+var fileMsg = new BinaryMessage("document.pdf", fileData);
+
+await socket.SendAsync(fileMsg);
+```
+
+### Broadcasting
+
+Send messages to all connected clients:
+```csharp
+// Broadcast text to everyone
+await server.BroadcastAsync("Server announcement!");
+
+// Broadcast binary data
+byte[] data = File.ReadAllBytes("update.zip");
+await server.BroadcastAsync(data);
+```
+
+### File Persistence
+
+Automatically save received files to disk:
+```csharp
+// Set up file storage
+var fileStore = new BinaryFileStore("./received_files");
+server.SetPersistenceBinaryFile(fileStore);
+
+// Files are automatically saved when binary messages are received
+```
+
+## 🛠️ Examples
+
+### Chat Server
+
+```csharp
+var server = new WebSocketServer(8080);
+
+server.OnConnection += async (e) =>
+{
+    var client = e.WebSocket;
+    
+    // Announce new user
+    await server.BroadcastAsync($"User {client.Id} joined the chat");
+    
+    client.OnMessage += async (msg) =>
+    {
+        if (msg.IsText && msg.Message is TextMessage textMsg)
+        {
+            // Broadcast to all other clients
+            var chatMsg = $"[{client.Id}]: {textMsg.Content}";
+            
+            foreach (var otherClient in server.Clients)
+            {
+                if (otherClient.Id != client.Id)
+                    await otherClient.SendAsync(chatMsg);
+            }
+        }
+    };
+    
+    client.OnClose += async (e) =>
+    {
+        await server.BroadcastAsync($"User {client.Id} left the chat");
+    };
+};
+
+server.Listen();
+```
+
+### File Transfer Server
+
+```csharp
+var server = new WebSocketServer(8080);
+server.SetPersistenceBinaryFile(new BinaryFileStore("./uploads"));
+
+server.OnConnection += (e) =>
+{
+    var client = e.WebSocket;
+    
+    client.OnMessage += async (msg) =>
+    {
+        if (msg.Message is BinaryMessage fileMsg)
+        {
+            Console.WriteLine($"Received file: {fileMsg.FileName} ({fileMsg.RawData.Length} bytes)");
+            
+            // Confirm receipt
+            await client.SendAsync(new TextMessage($"File '{fileMsg.FileName}' uploaded successfully!"));
+        }
+    };
+};
+
+server.Listen();
+```
+
+### Private Messaging
+
+```csharp
+server.OnConnection += (e) =>
+{
+    var client = e.WebSocket;
+    
+    client.OnMessage += async (msg) =>
+    {
+        if (msg.Message?.ReceiverId != null)
+        {
+            // Find target client
+            var target = server.Clients.FirstOrDefault(c => c.Id == msg.Message.ReceiverId);
+            
+            if (target != null)
+                await target.SendAsync(msg.Message);
+            else
+                await client.SendAsync(new TextMessage("User not found"));
+        }
+    };
+};
+
+// Client sends private message
+var privateMsg = new TextMessage("Hi there!", receiverId: "target-client-id");
+await client.SendAsync(privateMsg);
+```
+
+## 📚 API Overview
+
+### Server API
+
+```csharp
+var server = new WebSocketServer(port);
+
+// Events
+server.OnConnection += (ConnectionEventArgs e) => { };
+server.OnError += (ErrorEventArgs e) => { };
+
+// Methods
+server.Listen();                              // Start listening
+server.Stop();                               // Stop server
+server.BroadcastAsync(string message);       // Broadcast text
+server.BroadcastAsync(byte[] data);          // Broadcast binary
+server.SetPersistenceBinaryFile(IPersistence); // Enable file storage
+
+// Properties
+server.Clients;                              // Connected clients
+server.Port;                                 // Server port
+server.Address;                              // Server address
+```
+
+### Client API
+
+```csharp
+var client = new WebSocket(url);
+
+// Events
+client.OnOpen += (EventArgs e) => { };
+client.OnMessage += (MessageEventArgs e) => { };
+client.OnClose += (EventArgs e) => { };
+client.OnError += (ErrorEventArgs e) => { };
+
+// Methods
+await client.ConnectAsync();                 // Connect to server
+await client.SendAsync(string message);     // Send text
+await client.SendAsync(byte[] data);        // Send binary
+await client.SendAsync(Message message);    // Send structured message
+await client.CloseAsync();                  // Close connection
+
+// Properties
+client.Id;                                   // Unique client ID
+client.IsConnected;                          // Connection status
+```
+
+### Message API
+
+```csharp
+// Text Message
+var textMsg = new TextMessage(content, receiverId?, senderId?);
+textMsg.Content;        // Message text
+textMsg.SenderId;       // Sender ID
+textMsg.ReceiverId;     // Target receiver (null = broadcast)
+textMsg.Timestamp;      // Creation time
+textMsg.ToJson();       // Serialize to JSON
+
+// Binary Message
+var binaryMsg = new BinaryMessage(fileName, data, receiverId?, senderId?);
+binaryMsg.FileName;     // File name
+binaryMsg.RawData;      // Binary data
+binaryMsg.SenderId;     // Sender ID
+binaryMsg.ReceiverId;   // Target receiver (null = broadcast)
+binaryMsg.Timestamp;    // Creation time
+binaryMsg.ToBytes();    // Serialize to bytes
+```
+
+## 🔧 Advanced Usage
+
+### Custom Persistence
+
+Implement your own storage solution:
+
+```csharp
+public class DatabasePersistence : IPersistence
+{
+    public Tuple<string, byte[]> readBinaryFile(string fileName)
+    {
+        // Read from database
+        var data = database.GetFile(fileName);
+        return new Tuple<string, byte[]>(fileName, data);
+    }
+    
+    public void writeBinaryFile(string fileName, byte[] binaryFile)
+    {
+        // Save to database
+        database.SaveFile(fileName, binaryFile);
+    }
+}
+
+server.SetPersistenceBinaryFile(new DatabasePersistence());
+```
+
+### Error Handling
+
+```csharp
+server.OnError += (e) =>
+{
+    Console.WriteLine($"Server error: {e.Message}");
+    Console.WriteLine($"Exception: {e.Exception}");
+};
+
+client.OnError += (e) =>
+{
+    Console.WriteLine($"Client error: {e.Message}");
+    // Attempt reconnection
+    await Task.Delay(5000);
+    await client.ConnectAsync();
+};
+```
+
+### Message Filtering
+
+```csharp
+client.OnMessage += (msg) =>
+{
+    if (msg.Message is TextMessage textMsg)
+    {
+        switch (textMsg.Content)
+        {
+            case "ping":
+                await client.SendAsync(new TextMessage("pong"));
+                break;
+            case "quit":
+                await client.CloseAsync();
+                break;
+            default:
+                Console.WriteLine($"Message: {textMsg.Content}");
+                break;
+        }
+    }
+};
+```
+
+## 🏗️ Architecture
+
+SokioD follows a layered architecture:
+
+- **Transport Layer**: Raw TCP/WebSocket protocol handling
+- **Frame Layer**: WebSocket frame parsing and creation
+- **Message Layer**: Structured message types with serialization
+- **Application Layer**: High-level server/client APIs
+- **Persistence Layer**: Optional file storage capabilities
+
+## 🔒 Thread Safety
+
+- ✅ Multiple concurrent connections supported
+- ✅ File persistence operations
+- ✅ Automatic resource cleanup
+- ⚠️ Event handlers may execute on different threads
+
+## 📋 Requirements
+
+- .NET Standard 2.0 or later
+- C# 7.0 or later
+
+## 🤝 Contributing
+
+1. Fork the repository
+2. Create a feature branch
+3. Make your changes
+4. Add tests for new functionality
+5. Submit a pull request
+
+## 📄 License
+
+This project is licensed under the MIT License - see the LICENSE file for details.
+
+## 🔗 Related Projects
+
+- [SignalR](https://github.com/SignalR/SignalR) - Microsoft's real-time web framework
+- [websocket-sharp](https://github.com/sta/websocket-sharp) - WebSocket implementation for .NET
+- [Fleck](https://github.com/statianzo/Fleck) - C# WebSocket server implementation
+
+---
+
+**Built with ❤️ using C# and WebSocket protocol**
