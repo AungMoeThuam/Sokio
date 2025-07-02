@@ -2,6 +2,27 @@
 
 A lightweight, feature-rich C# WebSocket library for building real-time applications with support for text messaging, binary file transfers, and persistent storage.
 
+## 🚀 Quick Start
+
+### Installation
+
+Install the package via NuGet Package Manager:
+
+```bash
+dotnet add package Sokio --version 1.0.1
+```
+
+Or via Package Manager Console in Visual Studio:
+```powershell
+Install-Package Sokio -Version 1.0.1
+```
+
+Or add it directly to your `.csproj` file:
+```xml
+<PackageReference Include="Sokio" Version="1.0.1" />
+```
+
+
 ## ✨ Features
 
 - 🚀 **High Performance**: Asynchronous WebSocket server and client implementations
