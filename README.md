@@ -14,7 +14,7 @@ dotnet add package Sokio --version 1.0.3
 
 Or via Package Manager Console in Visual Studio:
 ```powershell
-Install-Package Sokio -Version 1.0.1
+Install-Package Sokio -Version 1.0.3
 ```
 
 Or add it directly to your `.csproj` file:
