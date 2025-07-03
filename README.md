@@ -30,7 +30,6 @@ Or add it directly to your `.csproj` file:
 - 📁 **File Persistence**: Automatic binary file storage and retrieval
 - 🎯 **Targeted Messaging**: Send messages to specific clients or broadcast to all
 - 🔄 **Event-Driven**: Comprehensive event handling for connections, messages, and errors
-- 🛡️ **Thread-Safe**: Concurrent connection handling with proper resource management
 - 📦 **Zero Dependencies**: Pure C# implementation using only .NET standard libraries
 
 ## 🚀 Quick Start
@@ -383,8 +382,6 @@ SokioD follows a layered architecture:
 - **Application Layer**: High-level server/client APIs
 - **Persistence Layer**: Optional file storage capabilities
 
-## 🔒 Thread Safety
-
 - ✅ Multiple concurrent connections supported
 - ✅ File persistence operations
 - ✅ Automatic resource cleanup
@@ -407,12 +404,5 @@ SokioD follows a layered architecture:
 
 This project is licensed under the MIT License - see the LICENSE file for details.
 
-## 🔗 Related Projects
 
-- [SignalR](https://github.com/SignalR/SignalR) - Microsoft's real-time web framework
-- [websocket-sharp](https://github.com/sta/websocket-sharp) - WebSocket implementation for .NET
-- [Fleck](https://github.com/statianzo/Fleck) - C# WebSocket server implementation
-
----
-
-**Built with ❤️ using C# and WebSocket protocol**
+**Built using C# and WebSocket protocol**
