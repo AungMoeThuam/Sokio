@@ -9,7 +9,7 @@ A lightweight, feature-rich C# WebSocket library for building real-time applicat
 Install the package via NuGet Package Manager:
 
 ```bash
-dotnet add package Sokio --version 1.0.1
+dotnet add package Sokio --version 1.0.3
 ```
 
 Or via Package Manager Console in Visual Studio:
@@ -19,7 +19,7 @@ Install-Package Sokio -Version 1.0.1
 
 Or add it directly to your `.csproj` file:
 ```xml
-<PackageReference Include="Sokio" Version="1.0.1" />
+<PackageReference Include="Sokio" Version="1.0.3" />
 ```
 
 
