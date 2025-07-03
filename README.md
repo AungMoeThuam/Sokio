@@ -83,7 +83,7 @@ Console.WriteLine($"WebSocket server running on port {server.Port}");
 using Sokio;
 
 // Connect to server
-var client = new WebSocket("ws://localhost:8080");
+var client = new WebSocketClient("ws://localhost:8080");
 
 client.OnOpen += (e) => Console.WriteLine("Connected to server");
 
@@ -264,7 +264,7 @@ server.Address;                              // Server address
 ### Client API
 
 ```csharp
-var client = new WebSocket(url);
+var client = new WebSocketClient(url);
 
 // Events
 client.OnOpen += (EventArgs e) => { };
@@ -348,30 +348,6 @@ client.OnError += (e) =>
     await client.ConnectAsync();
 };
 ```
-
-### Message Filtering
-
-```csharp
-client.OnMessage += (msg) =>
-{
-    if (msg.Message is TextMessage textMsg)
-    {
-        switch (textMsg.Content)
-        {
-            case "ping":
-                await client.SendAsync(new TextMessage("pong"));
-                break;
-            case "quit":
-                await client.CloseAsync();
-                break;
-            default:
-                Console.WriteLine($"Message: {textMsg.Content}");
-                break;
-        }
-    }
-};
-```
-
 ## 🏗️ Architecture
 
 SokioD follows a layered architecture:
