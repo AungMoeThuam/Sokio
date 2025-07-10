@@ -17,5 +17,7 @@ namespace Sokio
         Task SendAsync(byte[] data);
         Task SendAsync(Event ev);
         Task CloseAsync();
+        Task JoinRoom(string roomId);
+        Task LeaveRoom(string roomId);
     }
 }

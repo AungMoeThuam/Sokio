@@ -15,6 +15,8 @@ namespace Sokio
 		public string EventName => _eventName;
 		public Message Message => _message;
 
+
+
 		public Event(string eventName, Message message)
 		{
 			_eventName = eventName ?? throw new ArgumentNullException(nameof(eventName));

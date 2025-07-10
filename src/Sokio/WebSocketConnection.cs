@@ -1,5 +1,6 @@
 
 using System.Net.Sockets;
+using System.Security.Cryptography.X509Certificates;
 using System.Text;
 
 namespace Sokio
@@ -100,6 +101,26 @@ namespace Sokio
 
 
         protected override bool IsServerSocket() { return true; }
+
+        public override async Task JoinRoom(string roomId)
+        {
+            if (!_joinedRooms.Contains(roomId))
+            {
+                _joinedRooms.Add(roomId);
+            }
+
+        }
+
+        public override async Task LeaveRoom(string roomId)
+        {
+            _joinedRooms.Remove(roomId);
+        }
+
+        protected override void Dispose()
+        {
+            _stream?.Write(_frameHandler.CreateCloseFrame(true));
+            base.Dispose();
+        }
 
 
     }

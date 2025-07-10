@@ -25,7 +25,8 @@ namespace Sokio
 
         public void AddSocket(IWebSocket socket)
         {
-            _sockets.Add(socket.Id, socket);
+            if (!_sockets.ContainsKey(socket.Id))
+                _sockets.Add(socket.Id, socket);
         }
 
         public void RemoveSocket(IWebSocket socket)

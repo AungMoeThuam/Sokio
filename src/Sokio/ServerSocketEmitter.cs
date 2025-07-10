@@ -9,7 +9,13 @@ namespace Sokio
         private string? _targetSocketId;
 
         private MessageFactory _messageFactory;
-
+        public IMessageMediator Mediator
+        {
+            get
+            {
+                return _mediator;
+            }
+        }
         public ServerSocketEmitter(IWebSocket self, IMessageMediator mediator)
         {
             _self = self;
@@ -83,14 +89,16 @@ namespace Sokio
         private async Task Send(Event ev)
         {
 
-            Console.WriteLine(" target socket id - " + _targetSocketId);
-            Console.WriteLine(" target room id - " + _targetRoomId);
-            Console.WriteLine(" self socket id - " + _self.Id);
+
             if (_targetSocketId != null)
             {
                 var target = _mediator.GetSocket(_targetSocketId);
                 if (target != null)
+                {
+                    ev.Message.ReceiverId = null;
                     await target.SendAsync(ev);
+                }
+
             }
             else if (_targetRoomId != null)
             {
@@ -109,6 +117,14 @@ namespace Sokio
             }
         }
 
+        public Task LeaveRoom(string roomID)
+        {
+            throw new NotImplementedException();
+        }
 
+        public Task JoinRoom(string roomID)
+        {
+            throw new NotImplementedException();
+        }
     }
 }

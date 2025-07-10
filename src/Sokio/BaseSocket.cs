@@ -27,7 +27,14 @@ namespace Sokio
         public event OnCloseHandler OnClose;
         public event OnErrorHandler OnError;
 
+        public event OnJoinRoomHandler OnJoinRoom;
+        public event OnLeaveRoomHandler OnLeaveRoom;
+
         protected IPersistence? _persistence;
+
+        protected List<string> _joinedRooms;
+
+
 
 
         protected BaseSocket(ISocketEmitter socketEmitter)
@@ -38,12 +45,21 @@ namespace Sokio
             _eventCallbackManager = new EventCallbackManager();
             _socketEmitter = socketEmitter;
             _messageFactory = MessageFactory.Instance;
+            _joinedRooms = new List<string>();
 
         }
 
         public void Persist(IPersistence persistence)
         {
             _persistence = persistence;
+        }
+
+        public List<string> JoinedRooms
+        {
+            get
+            {
+                return _joinedRooms;
+            }
         }
 
 
@@ -175,7 +191,6 @@ namespace Sokio
 
             while (_isConnected)
             {
-                Console.WriteLine($"[DEBUG] Connected: {_isConnected}, Stream: {_stream}, Client: {_client}");
 
                 try
                 {
@@ -188,17 +203,22 @@ namespace Sokio
                     }
 
                     WebSocketFrame frame = _frameHandler.ParseFrame(buffer, bytesRead);
-                    Console.WriteLine("text fame - " + frame.GetTextPayload());
                     switch (frame.Opcode)
                     {
                         case WebSocketOpcode.Text:
                             {
-                                Console.WriteLine(frame.GetTextPayload());
                                 Event ev = EventParser.ParseTextEvent(frame.GetTextPayload());
-                                Console.WriteLine(JsonSerializer.Serialize(ev));
                                 TextMessage msg = (TextMessage)ev.Message;
-                                Console.WriteLine("framing -" + ev.ToJson());
-                                Console.WriteLine("socket - " + JsonSerializer.Serialize(_socketEmitter));
+                                Console.WriteLine("text is " + ev.EventName);
+                                if (ev.EventName == "join-room")
+                                {
+                                    OnJoinRoom?.Invoke(ev);
+                                }
+                                else if (ev.EventName == "leave-room")
+                                {
+                                    OnLeaveRoom?.Invoke(ev);
+                                }
+
                                 if (ev.Message.ReceiverId != null)
                                 {
                                     await _socketEmitter.ToSocket(ev.Message.ReceiverId).EmitAsync(ev);
@@ -219,6 +239,7 @@ namespace Sokio
                         case WebSocketOpcode.Binary:
                             {
                                 Event ev = EventParser.ParseBinaryEvent(frame.Payload);
+                                if (ev == null) break;
                                 BinaryMessage msg = (BinaryMessage)ev.Message;
                                 if (ev.Message.ReceiverId != null)
                                 {
@@ -246,7 +267,7 @@ namespace Sokio
                 }
                 catch (Exception ex)
                 {
-                    Console.WriteLine(" error happended in listening");
+                    Console.WriteLine("error happended in listening");
                     HandleError(ex);
                     break;
                 }
@@ -281,7 +302,7 @@ namespace Sokio
         {
             OnError?.Invoke(new ErrorEventArgs(ex));
             Console.WriteLine("error happened - " + ex.Message);
-            // Dispose();
+            Dispose();
         }
 
         protected virtual void Dispose()
@@ -294,6 +315,9 @@ namespace Sokio
 
         public abstract Task EmitAsync(string eventName, string data);
         public abstract Task EmitAsync(string eventName, byte[] data, string fileName);
+
+        public abstract Task JoinRoom(string roomId);
+        public abstract Task LeaveRoom(string roomId);
 
     }
 }

@@ -5,7 +5,7 @@ namespace Sokio
     {
         static async Task Main(string[] args)
         {
-            var server = new WebSocketServer(8080);
+            var server = new WebSocketServer("127.0.0.1", 8080);
             // server.SetPersistenceBinaryFile(new BinaryFileStore("./hello"));
 
 

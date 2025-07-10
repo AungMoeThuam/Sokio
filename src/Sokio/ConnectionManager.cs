@@ -57,6 +57,10 @@ namespace Sokio
 			{
 				_rooms[roomID].AddSocket(socket);
 			}
+
+			socket.JoinRoom(roomID);
+
+
 		}
 
 		public void LeaveRoom(string roomID, IWebSocket socket)

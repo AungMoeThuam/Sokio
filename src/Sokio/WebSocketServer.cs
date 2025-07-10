@@ -109,9 +109,28 @@ namespace Sokio
                 _connectionManager.AddSocket(connection);
                 OnConnection?.Invoke(new ConnectionEventArgs(connection));
 
+                connection.OnJoinRoom += async (e) =>
+                {
+                    Console.WriteLine("join room " + e.Message);
+                    _connectionManager.JoinRoom(e.Message.RoomId, connection);
+
+
+                };
+
+                connection.OnLeaveRoom += async (e) =>
+                {
+
+                    _connectionManager.LeaveRoom(e.Message.RoomId, connection);
+                };
+
                 connection.OnClose += (e) =>
                 {
+                    foreach (var room in connection.JoinedRooms)
+                    {
+                        _connectionManager.LeaveRoom(room, connection);
+                    }
                     _clients.Remove(connection);
+
                 };
             }
             catch (Exception ex)

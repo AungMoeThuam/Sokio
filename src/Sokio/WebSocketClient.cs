@@ -87,5 +87,35 @@ namespace Sokio
             await _socketEmitter.EmitAsync(eventName, data, fileName);
 
         }
+
+        public override async Task JoinRoom(string roomId)
+        {
+            Event ev = _messageFactory.CreateEvent(
+                  eventName: "join-room",
+                  content: null,
+                  senderId: Id,
+                  receiverId: null,
+                  roomId: roomId
+              );
+            await SendAsync(ev);
+        }
+
+        public override async Task LeaveRoom(string roomId)
+        {
+            Event ev = _messageFactory.CreateEvent(
+                 eventName: "leave-room",
+                 content: null,
+                 senderId: Id,
+                 receiverId: null,
+                 roomId: roomId
+             );
+            await SendAsync(ev);
+        }
+
+        protected override void Dispose()
+        {
+            _stream?.Write(_frameHandler.CreateCloseFrame(false));
+            base.Dispose();
+        }
     }
 }

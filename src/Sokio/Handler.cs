@@ -6,4 +6,7 @@ namespace Sokio
     public delegate void OnErrorHandler(ErrorEventArgs m);
     public delegate void OnOpenHandler(EventArgs m);
 
+    public delegate void OnJoinRoomHandler(Event m);
+    public delegate void OnLeaveRoomHandler(Event m);
+
 }
