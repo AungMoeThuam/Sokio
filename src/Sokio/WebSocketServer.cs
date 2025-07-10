@@ -15,6 +15,9 @@ namespace Sokio
         private List<IWebSocket> _clients;
         private IPersistence? _persistence;
 
+        private IMessageMediator _connectionManager;
+
+
         public int Port
         {
             get;
@@ -29,7 +32,7 @@ namespace Sokio
 
 
 
-        public IReadOnlyList<IWebSocket> Clients => _clients.AsReadOnly();
+        public IReadOnlyList<IWebSocket> Clients { get { return _clients.AsReadOnly(); } }
 
         public WebSocketServer(int port) : this(IPAddress.Any, port)
         {
@@ -47,6 +50,8 @@ namespace Sokio
             _handshake = new WebSocketHandshake();
             _clients = new List<IWebSocket>();
             _isListening = false;
+            _connectionManager = new ConnectionManager();
+
         }
 
         public void SetPersistenceBinaryFile(IPersistence persistence)
@@ -95,12 +100,13 @@ namespace Sokio
         private async Task HandleConnectionAsync(TcpClient tcpClient)
         {
             WebSocketConnection connection = new WebSocketConnection(tcpClient);
-            if (_persistence != null) connection.Persist(_persistence);
+            connection.SetSocketEmitter(_connectionManager);
             try
             {
                 await connection.AcceptAsync(_handshake);
 
                 _clients.Add(connection);
+                _connectionManager.AddSocket(connection);
                 OnConnection?.Invoke(new ConnectionEventArgs(connection));
 
                 connection.OnClose += (e) =>

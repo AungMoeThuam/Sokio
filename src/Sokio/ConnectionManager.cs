@@ -1,11 +1,12 @@
 
 
+
 namespace Sokio
 {
-	public class SocketStore
+	public class ConnectionManager : IMessageMediator
 	{
 		private Dictionary<string, Room> _rooms;
-		private Dictionary<string, SokioSocket> _sockets;
+		private Dictionary<string, IWebSocket> _sockets;
 
 		public Dictionary<string, Room> Rooms
 		{
@@ -15,20 +16,20 @@ namespace Sokio
 			}
 		}
 
-		public Dictionary<string, SokioSocket> Sockets
+		public Dictionary<string, IWebSocket> Sockets
 		{
 			get
 			{
 				return _sockets;
 			}
 		}
-		public SocketStore()
+		public ConnectionManager()
 		{
 			_rooms = new Dictionary<string, Room>();
-			_sockets = new Dictionary<string, SokioSocket>();
+			_sockets = new Dictionary<string, IWebSocket>();
 		}
 
-		public void AddSocket(SokioSocket socket)
+		public void AddSocket(IWebSocket socket)
 		{
 
 			_sockets.Add(socket.Id, socket);
@@ -36,23 +37,14 @@ namespace Sokio
 
 		}
 
-		public void RemoveSocket(SokioSocket socket)
+		public void RemoveSocket(IWebSocket socket)
 		{
 			_sockets.Remove(socket.Id);
 		}
 
-		public Room? GetRoom(string roomID)
-		{
-			if (_rooms.ContainsKey(roomID))
-			{
-				return _rooms[roomID];
-			}
-
-			return null;
-		}
 
 
-		public void JoinRoom(string roomID, SokioSocket socket)
+		public void JoinRoom(string roomID, IWebSocket socket)
 		{
 
 			if (!_rooms.ContainsKey(roomID))
@@ -67,7 +59,7 @@ namespace Sokio
 			}
 		}
 
-		public void LeaveRoom(string roomID, SokioSocket socket)
+		public void LeaveRoom(string roomID, IWebSocket socket)
 		{
 			if (_rooms.ContainsKey(roomID))
 			{
@@ -81,6 +73,26 @@ namespace Sokio
 			{
 				Console.WriteLine($"Room with ID {roomID} not found.");
 			}
+		}
+
+		public IWebSocket? GetSocket(string id)
+		{
+			if (_sockets.ContainsKey(id))
+			{
+				return _sockets[id];
+			}
+			return null;
+		}
+
+		public Dictionary<string, IWebSocket> GetRoom(string roomId)
+		{
+			if (_rooms.ContainsKey(roomId))
+			{
+
+				return _rooms[roomId].Sockets;
+			}
+
+			return new Dictionary<string, IWebSocket>();
 		}
 	}
 }

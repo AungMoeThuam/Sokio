@@ -15,6 +15,7 @@ namespace Sokio
         Task SendAsync(Message message);
         Task SendAsync(string message);
         Task SendAsync(byte[] data);
+        Task SendAsync(Event ev);
         Task CloseAsync();
     }
 }

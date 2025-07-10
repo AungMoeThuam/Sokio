@@ -1,4 +1,5 @@
 using System.Net.Sockets;
+using System.Text.Json;
 
 namespace Sokio
 {
@@ -8,11 +9,16 @@ namespace Sokio
 
     public abstract class BaseSocket : IWebSocket
     {
+        protected readonly IMessageFactory _messageFactory;
         protected TcpClient _client;
         protected NetworkStream _stream;
         protected WebSocketFrameHandler _frameHandler;
         protected bool _isConnected;
         protected string _id;
+
+        protected EventCallbackManager _eventCallbackManager;
+
+        protected ISocketEmitter _socketEmitter;
 
         public string Id => _id;
         public bool IsConnected => _isConnected;
@@ -24,16 +30,26 @@ namespace Sokio
         protected IPersistence? _persistence;
 
 
-        protected BaseSocket()
+        protected BaseSocket(ISocketEmitter socketEmitter)
         {
             _id = Guid.NewGuid().ToString();
             _frameHandler = new WebSocketFrameHandler();
             _isConnected = false;
+            _eventCallbackManager = new EventCallbackManager();
+            _socketEmitter = socketEmitter;
+            _messageFactory = MessageFactory.Instance;
+
         }
 
         public void Persist(IPersistence persistence)
         {
             _persistence = persistence;
+        }
+
+
+        public void On(string eventName, Func<MessageEventArgs, Task> callback)
+        {
+            _eventCallbackManager.register(eventName, new EventCallback(eventName, callback));
         }
 
         public virtual async Task SendAsync(string message)
@@ -51,6 +67,35 @@ namespace Sokio
                 HandleError(ex);
             }
         }
+
+
+        public virtual async Task SendAsync(Event ev)
+        {
+            if (!_isConnected)
+                throw new InvalidOperationException("WebSocket is not connected");
+
+            try
+            {
+                byte[] frame;
+                if (ev.Message.MessageType == "text")
+                {
+                    frame = _frameHandler.CreateTextFrame(ev.ToJson(), IsServerSocket());
+                    await _stream.WriteAsync(frame, 0, frame.Length);
+
+                }
+                else
+                {
+
+                    frame = _frameHandler.CreateBinaryFrame(ev.ToBytes(), IsServerSocket());
+                }
+                await _stream.WriteAsync(frame, 0, frame.Length);
+            }
+            catch (Exception ex)
+            {
+                HandleError(ex);
+            }
+        }
+
 
         public virtual async Task SendAsync(byte[] data)
         {
@@ -130,6 +175,8 @@ namespace Sokio
 
             while (_isConnected)
             {
+                Console.WriteLine($"[DEBUG] Connected: {_isConnected}, Stream: {_stream}, Client: {_client}");
+
                 try
                 {
                     int bytesRead = await _stream.ReadAsync(buffer, 0, buffer.Length);
@@ -141,36 +188,52 @@ namespace Sokio
                     }
 
                     WebSocketFrame frame = _frameHandler.ParseFrame(buffer, bytesRead);
-
+                    Console.WriteLine("text fame - " + frame.GetTextPayload());
                     switch (frame.Opcode)
                     {
                         case WebSocketOpcode.Text:
                             {
-                                TextMessage m = MessageParser.ParseMessage(frame.GetTextPayload());
-                                if (m == null)
+                                Console.WriteLine(frame.GetTextPayload());
+                                Event ev = EventParser.ParseTextEvent(frame.GetTextPayload());
+                                Console.WriteLine(JsonSerializer.Serialize(ev));
+                                TextMessage msg = (TextMessage)ev.Message;
+                                Console.WriteLine("framing -" + ev.ToJson());
+                                Console.WriteLine("socket - " + JsonSerializer.Serialize(_socketEmitter));
+                                if (ev.Message.ReceiverId != null)
                                 {
-                                    OnMessage?.Invoke(new MessageEventArgs(frame.GetTextPayload()));
+                                    await _socketEmitter.ToSocket(ev.Message.ReceiverId).EmitAsync(ev);
+                                }
+                                else if (ev.Message.RoomId != null)
+                                {
+                                    await _socketEmitter.ToRoom(ev.Message.RoomId).EmitAsync(ev);
                                 }
                                 else
                                 {
+                                    _eventCallbackManager.Execute(ev.EventName, new MessageEventArgs(ev.Message));
 
-                                    OnMessage?.Invoke(new MessageEventArgs(m));
                                 }
+                                OnMessage?.Invoke(new MessageEventArgs(msg));
                                 break;
                             }
 
                         case WebSocketOpcode.Binary:
                             {
-                                BinaryMessage m = MessageParser.ParseBinaryMessage(frame.Payload);
-                                if (m == null)
+                                Event ev = EventParser.ParseBinaryEvent(frame.Payload);
+                                BinaryMessage msg = (BinaryMessage)ev.Message;
+                                if (ev.Message.ReceiverId != null)
                                 {
-                                    OnMessage?.Invoke(new MessageEventArgs(frame.Payload));
+                                    await _socketEmitter.ToSocket(ev.Message.ReceiverId).EmitAsync(ev);
+                                }
+                                else if (ev.Message.RoomId != null)
+                                {
+                                    await _socketEmitter.ToRoom(ev.Message.RoomId).EmitAsync(ev);
                                 }
                                 else
                                 {
-                                    if (_persistence != null) _persistence.writeBinaryFile(m.FileName, m.RawData);
-                                    OnMessage?.Invoke(new MessageEventArgs(m));
+                                    _eventCallbackManager.Execute(ev.EventName, new MessageEventArgs(ev.Message));
+
                                 }
+                                OnMessage?.Invoke(new MessageEventArgs(msg));
                                 break;
                             }
                         case WebSocketOpcode.Close:
@@ -183,6 +246,7 @@ namespace Sokio
                 }
                 catch (Exception ex)
                 {
+                    Console.WriteLine(" error happended in listening");
                     HandleError(ex);
                     break;
                 }
@@ -203,6 +267,7 @@ namespace Sokio
 
                 OnClose?.Invoke(EventArgs.Empty);
             }
+
             Dispose();
         }
 
@@ -215,8 +280,8 @@ namespace Sokio
         protected virtual void HandleError(Exception ex)
         {
             OnError?.Invoke(new ErrorEventArgs(ex));
-            _isConnected = false;
-            Dispose();
+            Console.WriteLine("error happened - " + ex.Message);
+            // Dispose();
         }
 
         protected virtual void Dispose()
@@ -226,5 +291,9 @@ namespace Sokio
         }
 
         protected abstract bool IsServerSocket();
+
+        public abstract Task EmitAsync(string eventName, string data);
+        public abstract Task EmitAsync(string eventName, byte[] data, string fileName);
+
     }
 }

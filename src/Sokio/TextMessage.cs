@@ -4,16 +4,12 @@ using System.Text.Json;
 
 namespace Sokio
 {
-    /// <summary>
     /// Represents a text message
-    /// </summary>
     public class TextMessage : Message
     {
         private string _content;
 
-        /// <summary>
         /// The text content of the message
-        /// </summary>
         public string Content
         {
             get { return _content; }
@@ -25,13 +21,11 @@ namespace Sokio
             get { return "text"; }
         }
 
-        /// <summary>
         /// Creates a new text message
-        /// </summary>
-        /// <param name="content">The text content</param>
-        /// <param name="receiverId">Target receiver ID (null for broadcast)</param>
-        /// <param name="senderId">Sender ID (will be set by server if null)</param>
-        public TextMessage(string content, string receiverId = null, string senderId = null)
+        /// param name="content" The text content
+        /// param name="receiverId" Target receiver ID (null for broadcast)
+        /// param name="senderId" Sender ID (will be set by server if null)
+        public TextMessage(string content, string? receiverId = null, string? senderId = null)
             : base(senderId, receiverId)
         {
             _content = content;
@@ -46,7 +40,8 @@ namespace Sokio
                 content = Content,
                 senderId = SenderId,
                 receiverId = ReceiverId,
-                timestamp = Timestamp.ToString("O") // ISO 8601 format
+                timestamp = Timestamp.ToString("O"),// ISO 8601 format
+                roomId = RoomId
             };
 
             return JsonSerializer.Serialize(messageObject);

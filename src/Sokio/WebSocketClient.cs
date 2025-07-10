@@ -7,7 +7,7 @@ namespace Sokio
     /// <summary>
     /// WebSocket client implementation
     /// </summary>
-    public class WebSocket : BaseSocket
+    public class WebSocketClient : BaseSocket
     {
 
         private Uri _uri;
@@ -15,7 +15,7 @@ namespace Sokio
 
         public OnOpenHandler OnOpen;
 
-        public WebSocket(string url) : base()
+        public WebSocketClient(string url) : base(null)
         {
             _uri = new Uri(url);
             _handshake = new WebSocketHandshake();
@@ -40,6 +40,7 @@ namespace Sokio
 
                 await _stream.WriteAsync(requestBytes, 0, requestBytes.Length);
 
+
                 // Read response
                 byte[] buffer = new byte[1024];
                 int bytesRead = await _stream.ReadAsync(buffer, 0, buffer.Length);
@@ -47,14 +48,17 @@ namespace Sokio
 
                 if (response.Contains("101 Switching Protocols"))
                 {
+                    Console.WriteLine("connected");
                     _isConnected = true;
                     OnOpen?.Invoke(EventArgs.Empty);
+                    _socketEmitter = new ClientSocketEmitter(this);
                     _ = StartReceivingAsync();
                 }
                 else
                 {
                     throw new InvalidOperationException("WebSocket handshake failed");
                 }
+
             }
             catch (Exception ex)
             {
@@ -63,5 +67,25 @@ namespace Sokio
         }
 
         protected override bool IsServerSocket() => false;
+        public ISocketEmitter ToRoom(string roomId)
+        {
+            return _socketEmitter.ToRoom(roomId);
+        }
+
+        public ISocketEmitter ToSocket(string socketId)
+        {
+            return _socketEmitter.ToSocket(socketId);
+        }
+
+        public override async Task EmitAsync(string eventName, string data)
+        {
+            await _socketEmitter.EmitAsync(eventName, data);
+        }
+
+        public override async Task EmitAsync(string eventName, byte[] data, string fileName)
+        {
+            await _socketEmitter.EmitAsync(eventName, data, fileName);
+
+        }
     }
 }

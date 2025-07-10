@@ -1,5 +1,4 @@
 ﻿
-using SokioD;
 namespace Sokio
 {
     class ChatServer
@@ -7,7 +6,7 @@ namespace Sokio
         static async Task Main(string[] args)
         {
             var server = new WebSocketServer(8080);
-            server.SetPersistenceBinaryFile(new BinaryFileStore("./hello"));
+            // server.SetPersistenceBinaryFile(new BinaryFileStore("./hello"));
 
 
             server.OnConnection += async (e) =>
@@ -17,30 +16,22 @@ namespace Sokio
 
                 Console.WriteLine($"Client connected: {ws.Id}");
 
-                await server.BroadcastAsync("adad");
+                // await server.BroadcastAsync("adad");
+
+                ws.On("testing", async (e) =>
+                {
+                    Console.WriteLine("testing in server trigger - " + e.Message);
+                });
+
 
                 // Handle messages from this client
                 ws.OnMessage += async (msg) =>
                 {
-                    if (msg.IsText)
-                    {
-                        Console.WriteLine($"Received: {msg.Text}");
-                        Console.WriteLine($"Message: {msg.Message?.ToJson()}");
+                    Console.WriteLine("msg - " + msg.Message);
 
-                        if (msg.Message?.ReceiverId != null)
-                        {
-                            foreach (var item in server.Clients)
-                            {
-                                if (item.Id == msg.Message?.ReceiverId)
-                                {
-                                    item.SendAsync(new TextMessage(msg.Text));
-                                }
-                            }
-                        }
+                    // Broadcast to all clients
+                    // await server.BroadcastAsync($"[{ws.Id}]: {msg.Text}");
 
-                        // Broadcast to all clients
-                        // await server.BroadcastAsync($"[{ws.Id}]: {msg.Text}");
-                    }
                 };
 
                 ws.OnClose += (evt) =>
@@ -65,7 +56,7 @@ namespace Sokio
 
             Console.WriteLine($"WebSocket server listening on {server.Address} port {server.Port}");
             Console.WriteLine("Press any key to stop...");
-            Console.ReadKey();
+            Console.ReadLine();
 
             server.Stop();
         }

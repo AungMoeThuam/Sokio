@@ -1,60 +1,64 @@
 
 
-
-
-
-// // Example usage in a chat application
-// namespace SokioD.Examples
+// Enhanced BaseSocket emit method
+// namespace Sokio
 // {
-//     class MessageExample
+//     public abstract partial class BaseSocket
 //     {
-//         static async Task ExampleUsage()
+
+
+//         // Properties for targeting
+//         public string? ReceiverId { get; set; }
+//         public string? RoomId { get; set; }
+//     }
+// }
+
+// Usage Examples
+// namespace Sokio.Examples
+// {
+//     class MessageFactoryExample
+//     {
+//         static async Task Example()
 //         {
-//             var client = new WebSocket("ws://localhost:8080");
-//             await client.ConnectAsync();
+//             var factory = MessageFactory.Instance;
+//             var socket = new WebSocket("ws://localhost:8080");
 
-//             // Method 1: Send raw string (backward compatible)
-//             await client.SendAsync("Hello everyone!");
+//             // Example 1: Simple text event
+//             await socket.EmitAsync("chat", "Hello world!");
 
-//             // Method 2: Send structured text message
-//             var textMsg = new TextMessage(
-//                 content: "Hello user123!",
-//                 receiverId: "user123"  // Will be routed to specific user (if server supports it)
-//             );
-//             await client.SendAsync(textMsg);
-
-//             // Method 3: Send binary file
+//             // Example 2: Binary file event
 //             byte[] fileData = File.ReadAllBytes("document.pdf");
-//             var binaryMsg = new BinaryMessage(
-//                 fileName: "document.pdf",
-//                 rawData: fileData,
-//                 receiverId: "user456"
-//             );
-//             await client.SendAsync(binaryMsg);
+//             await socket.EmitAsync("file-upload", fileData, "document.pdf");
 
-//             // Method 4: Broadcast to room (for future HD feature)
-//             var roomMsg = new TextMessage(
-//                 content: "Hello room members!"
-//             );
-//             await client.SendAsync(roomMsg);
+//             // Example 3: Typed data event
+//             var userData = new { name = "John", age = 30 };
+//             await socket.EmitAsync("user-update", userData);
 
-//             // Receiving messages
-//             client.OnMessage += (e) =>
+//             // Example 4: Targeted emit
+//             socket.ReceiverId = "user123";
+//             await socket.EmitAsync("private-message", "Hello user!");
+
+//             // Example 5: Room emit
+//             socket.RoomId = "general";
+//             socket.ReceiverId = null;
+//             await socket.EmitAsync("room-message", "Hello room!");
+
+//             // Server-side handling
+//             socket.OnMessage += (e) =>
 //             {
-//                 if (e.IsText)
+//                 if (e.Message is Event evt)
 //                 {
-//                     var message = MessageParser.ParseMessage(e.Message);
-//                     if (message is TextMessage textMessage)
+//                     Console.WriteLine($"Event: {evt.EventName}");
+
+//                     switch (evt.Message)
 //                     {
-//                         Console.WriteLine($"From {textMessage.SenderId}: {textMessage.Content}");
-//                     }
-//                 }
-//                 else
-//                 {
-//                     var message = MessageParser.ParseBinaryMessage(e.RawData);
-//                     if (message is BinaryMessage binaryMessage)
-//                     {
-//                         Console.WriteLine($"Received file: {binaryMessage.FileName} ({binaryMessage.RawData.Length} bytes)");
+//                         case TextMessage text:
+//                             Console.WriteLine($"Text: {text.Content}");
+//                             break;
+//                         case BinaryMessage binary:
+//                             Console.WriteLine($"File: {binary.FileName} ({binary.RawData.Length} bytes)");
+//                             File.WriteAllBytes($"received_{binary.FileName}", binary.RawData);
+//                             break;
 //                     }
 //                 }
 //             };

@@ -1,11 +1,10 @@
 
-
 namespace Sokio
 {
-    public class Room : IEmitable
+    public class Room
     {
         private string _id;
-        private Dictionary<string, BaseSocket> _sockets;
+        private Dictionary<string, IWebSocket> _sockets;
 
         public string Id
         {
@@ -13,36 +12,26 @@ namespace Sokio
             set { _id = value; }
         }
 
-        public Dictionary<string, BaseSocket> Sockets
+        public Dictionary<string, IWebSocket> Sockets
         {
             get { return _sockets; }
-            set { _sockets = value; }
         }
 
         public Room(string id)
         {
             _id = "room-" + id;
-            _sockets = new Dictionary<string, BaseSocket>();
+            _sockets = new Dictionary<string, IWebSocket>();
         }
 
-        public void AddSocket(BaseSocket socket)
+        public void AddSocket(IWebSocket socket)
         {
             _sockets.Add(socket.Id, socket);
         }
 
-        public void RemoveSocket(BaseSocket socket)
+        public void RemoveSocket(IWebSocket socket)
         {
             _sockets.Remove(socket.Id);
         }
-
-        public void Emit(string eventName, object data)
-        {
-            foreach (KeyValuePair<string, BaseSocket> s in _sockets)
-            {
-                _ = s.Value.SendTextAsync(data);
-            }
-        }
-
 
     }
 }

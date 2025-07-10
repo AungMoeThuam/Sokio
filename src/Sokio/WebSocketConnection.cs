@@ -10,11 +10,21 @@ namespace Sokio
     public class WebSocketConnection : BaseSocket
     {
 
-        public WebSocketConnection(TcpClient client) : base()
+
+        public WebSocketConnection(TcpClient client) : base(null)
         {
             _client = client;
             _stream = client.GetStream();
         }
+
+
+
+        public void SetSocketEmitter(IMessageMediator m)
+        {
+            _socketEmitter = new ServerSocketEmitter(this, m);
+        }
+
+
 
         internal async Task AcceptAsync(WebSocketHandshake handshake)
         {
@@ -39,6 +49,55 @@ namespace Sokio
                 throw new InvalidOperationException("Invalid WebSocket handshake request");
             }
         }
+
+        public override async Task EmitAsync(string eventName, string data)
+        {
+            if (!_isConnected)
+                throw new InvalidOperationException("Socket is not connected");
+            try
+            {
+
+                await _socketEmitter.EmitAsync(eventName, data);
+
+
+            }
+            catch (Exception ex)
+            {
+                HandleError(ex);
+            }
+        }
+
+        public ISocketEmitter ToRoom(string roomId)
+        {
+            return _socketEmitter.ToRoom(roomId);
+        }
+
+        public ISocketEmitter ToSocket(string socketId)
+        {
+            return _socketEmitter.ToSocket(socketId);
+        }
+        public override async Task EmitAsync(string eventName, byte[] data, string fileName)
+        {
+            if (!_isConnected)
+                throw new InvalidOperationException("Socket is not connected");
+
+            try
+            {
+                await _socketEmitter.EmitAsync(eventName, data, fileName);
+            }
+            catch (Exception ex)
+            {
+                HandleError(ex);
+            }
+        }
+
+        // public async Task EmitAsync<T>(string eventName, T data) where T : class
+        // {
+        //     var json = JsonSerializer.Serialize(data);
+        //     await EmitAsync(eventName, json);
+        // }
+
+
 
         protected override bool IsServerSocket() { return true; }
 

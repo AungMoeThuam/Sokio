@@ -9,8 +9,22 @@ namespace Sokio
     {
         private string _id;
         private DateTime _timestamp;
-        private string _senderId;
-        private string _receiverId;
+        private string? _senderId;
+        private string? _receiverId;
+        private string? _roomId;
+
+        public string? RoomId
+        {
+            get
+            {
+                return _roomId;
+            }
+            set
+            {
+                _roomId = value;
+            }
+        }
+
 
         /// <summary>
         /// Unique identifier for the message
@@ -25,7 +39,7 @@ namespace Sokio
         /// <summary>
         /// ID of the sender WebSocket connection
         /// </summary>
-        public string SenderId
+        public string? SenderId
         {
             get { return _senderId; }
             set { _senderId = value; }
@@ -34,11 +48,12 @@ namespace Sokio
         /// <summary>
         /// ID of the target receiver (null for broadcast)
         /// </summary>
-        public string ReceiverId
+        public string? ReceiverId
         {
             get { return _receiverId; }
             set { _receiverId = value; }
         }
+
 
         /// <summary>
         /// The type of message (text or binary)
@@ -56,12 +71,13 @@ namespace Sokio
         /// </summary>
         public abstract byte[] ToBytes();
 
-        protected Message(string senderId = null, string receiverId = null)
+        protected Message(string? senderId = null, string? receiverId = null, string? roomId = null)
         {
             _id = Guid.NewGuid().ToString();
             _timestamp = DateTime.UtcNow;
             _senderId = senderId;
             _receiverId = receiverId;
+            _roomId = roomId;
         }
     }
 }

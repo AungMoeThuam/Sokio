@@ -3,9 +3,8 @@ using System.Text.Json;
 
 namespace Sokio
 {
-    /// <summary>
+
     /// Represents a binary message (e.g., file transfer)
-    /// </summary>
     public class BinaryMessage : Message
     {
         private string _fileName;
@@ -42,8 +41,8 @@ namespace Sokio
         /// <param name="receiverId">Target receiver ID (null for broadcast)</param>
         /// <param name="senderId">Sender ID (will be set by server if null)</param>
         public BinaryMessage(string fileName, byte[] rawData, string receiverId = null,
-                           string senderId = null)
-            : base(senderId, receiverId)
+                           string? senderId = null, string? roomId = null)
+            : base(senderId, receiverId, roomId)
         {
 
             string extension = Path.GetExtension(fileName);
